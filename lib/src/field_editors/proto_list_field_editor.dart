@@ -3,9 +3,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
-import 'package:protobuf_message_editor/src/field_editors/proto_field_editor.dart';
-import 'package:protobuf_message_editor/src/utils/proto_field_type_extensions.dart';
-import 'package:protobuf_message_editor/src/utils/proto_message_extensions.dart';
 
 class ProtoListFieldEditor extends StatefulWidget {
   static dynamic defaultRepeatedFieldAddBuilder({
@@ -108,6 +105,7 @@ class _ProtoListFieldEditorState extends State<ProtoListFieldEditor> {
               fieldInfo: widget.fieldInfo,
               parentMessage: widget.message,
               submessage: item,
+              onRebuildRequested: () => setState(() {}),
             );
           }),
           Padding(

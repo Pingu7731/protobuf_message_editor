@@ -26,8 +26,10 @@ class ProtoFieldEditor extends StatefulWidget {
     required GeneratedMessage submessage,
     required GeneratedMessage parentMessage,
     required FieldInfo fieldInfo,
+    VoidCallback? onRebuildRequested,
   })
   submessageBuilder;
+  final VoidCallback? onRebuildRequested;
 
   const ProtoFieldEditor({
     super.key,
@@ -36,6 +38,7 @@ class ProtoFieldEditor extends StatefulWidget {
     this.listIndex,
     this.repeatedFieldAddBuilder,
     this.submessageBuilder = defaultSubmessageBuilder,
+    this.onRebuildRequested,
   });
 
   @override
@@ -45,17 +48,56 @@ class ProtoFieldEditor extends StatefulWidget {
     required GeneratedMessage submessage,
     required GeneratedMessage parentMessage,
     required FieldInfo fieldInfo,
-  }) => ExpansionTile(
-    dense: true,
-    title: Text(fieldInfo.name),
-    expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Padding(
-        padding: EdgeInsets.only(left: 12),
-        child: ProtoMessageEditor(message: submessage),
-      ),
-    ],
-  );
+    VoidCallback? onRebuildRequested,
+  }) {
+    final isFrozen = submessage.isFrozen;
+
+    return ExpansionTile(
+      dense: true,
+      title: Text(fieldInfo.name),
+      subtitle: isFrozen
+          ? const Text(
+              'Frozen (Read-only)',
+              style: TextStyle(fontStyle: FontStyle.italic),
+            )
+          : null,
+      trailing: isFrozen
+          ? IconButton(
+              icon: const Icon(Icons.edit_note),
+              tooltip: 'Clone to edit',
+              onPressed: () {
+                parentMessage.setField(
+                  fieldInfo.tagNumber,
+                  submessage.deepCopy(),
+                );
+                onRebuildRequested?.call();
+              },
+            )
+          : null,
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: ProtoMessageEditor(
+            message: submessage,
+            onRebuildRequested: onRebuildRequested,
+            submessageBuilder:
+                ({
+                  required submessage,
+                  required parentMessage,
+                  required fieldInfo,
+                  onRebuildRequested,
+                }) => defaultSubmessageBuilder(
+                  submessage: submessage,
+                  parentMessage: parentMessage,
+                  fieldInfo: fieldInfo,
+                  onRebuildRequested: onRebuildRequested,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _ProtoFieldEditorState extends State<ProtoFieldEditor> {
@@ -122,6 +164,10 @@ class _ProtoFieldEditorState extends State<ProtoFieldEditor> {
         submessage: submessage,
         parentMessage: widget.message,
         fieldInfo: widget.fieldInfo,
+        onRebuildRequested: () {
+          setState(() {});
+          widget.onRebuildRequested?.call();
+        },
       );
     } else if (widget.fieldInfo.containsString()) {
       return TextField(

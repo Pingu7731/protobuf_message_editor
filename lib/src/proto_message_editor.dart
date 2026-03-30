@@ -11,6 +11,7 @@ typedef SubmessageBuilder =
       required GeneratedMessage submessage,
       required GeneratedMessage parentMessage,
       required FieldInfo fieldInfo,
+      VoidCallback? onRebuildRequested,
     });
 
 class ProtoMessageEditor extends StatefulWidget {
@@ -23,6 +24,7 @@ class ProtoMessageEditor extends StatefulWidget {
 
   final CustomEditorRegistry? customEditorRegistry;
   final SubmessageBuilder submessageBuilder;
+  final VoidCallback? onRebuildRequested;
 
   const ProtoMessageEditor({
     super.key,
@@ -30,6 +32,7 @@ class ProtoMessageEditor extends StatefulWidget {
     this.expansionsTileTitle,
     this.customEditorRegistry,
     this.submessageBuilder = ProtoFieldEditor.defaultSubmessageBuilder,
+    this.onRebuildRequested,
   });
 
   factory ProtoMessageEditor.withCustomEditors({
@@ -79,6 +82,7 @@ class _ProtoMessageEditorState extends State<ProtoMessageEditor> {
       fieldInfo: fieldInfo,
       repeatedFieldAddBuilder: customEditorRegistry.repeatedFieldAddBuilder,
       submessageBuilder: widget.submessageBuilder,
+      onRebuildRequested: widget.onRebuildRequested,
     );
   }
 

@@ -63,10 +63,15 @@ class _ProtoDualPanelMessageEditorState
   Widget _buildNavigableSubmessage(
     BuildContext context, {
     required GeneratedMessage submessage,
+    required GeneratedMessage parentMessage,
     required FieldInfo fieldInfo,
     required bool useReplace,
     bool submessageSelected = false,
+    VoidCallback? onRebuildRequested,
   }) {
+    final isFrozen = submessage.isFrozen;
+    final theme = Theme.of(context);
+
     return GestureDetector(
       onTap: () => useReplace
           ? _navigationState.replace(submessage)
@@ -74,18 +79,59 @@ class _ProtoDualPanelMessageEditorState
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).dividerColor),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(4),
-          color: submessageSelected ? Theme.of(context).highlightColor : null,
+          color: submessageSelected ? theme.highlightColor : null,
         ),
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                '${fieldInfo.name}: ${submessage.info_.qualifiedMessageName}',
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${fieldInfo.name}: ${submessage.info_.qualifiedMessageName}',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  if (isFrozen)
+                    Text(
+                      'Frozen (Read-only)',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: theme.disabledColor,
+                      ),
+                    ),
+                ],
               ),
             ),
+            if (isFrozen)
+              IconButton(
+                icon: const Icon(Icons.edit_note),
+                tooltip: 'Clone to edit',
+                onPressed: () {
+                  final cloned = submessage.deepCopy();
+
+                  if (fieldInfo.isRepeated) {
+                    final list =
+                        parentMessage.getField(fieldInfo.tagNumber) as List;
+                    final index = list.indexWhere(
+                      (item) => identical(item, submessage),
+                    );
+                    if (index != -1) {
+                      list[index] = cloned;
+                    }
+                  } else {
+                    parentMessage.setField(fieldInfo.tagNumber, cloned);
+                  }
+
+                  if (useReplace && submessageSelected) {
+                    _navigationState.replace(cloned);
+                  }
+
+                  onRebuildRequested?.call();
+                },
+              ),
             const Icon(Icons.chevron_right),
           ],
         ),
@@ -107,12 +153,18 @@ class _ProtoDualPanelMessageEditorState
               required GeneratedMessage submessage,
               required GeneratedMessage parentMessage,
               required FieldInfo fieldInfo,
+              VoidCallback? onRebuildRequested,
             }) {
               return _buildNavigableSubmessage(
                 context,
                 submessage: submessage,
+                parentMessage: parentMessage,
                 fieldInfo: fieldInfo,
                 useReplace: false,
+                onRebuildRequested: () {
+                  setState(() {});
+                  onRebuildRequested?.call();
+                },
               );
             },
       ),
@@ -134,15 +186,21 @@ class _ProtoDualPanelMessageEditorState
               required GeneratedMessage submessage,
               required GeneratedMessage parentMessage,
               required FieldInfo fieldInfo,
+              VoidCallback? onRebuildRequested,
             }) {
               final isSelected = identical(submessage, currentSubmessage);
 
               return _buildNavigableSubmessage(
                 context,
                 submessage: submessage,
+                parentMessage: parentMessage,
                 fieldInfo: fieldInfo,
                 useReplace: true,
                 submessageSelected: isSelected,
+                onRebuildRequested: () {
+                  setState(() {});
+                  onRebuildRequested?.call();
+                },
               );
             },
       ),

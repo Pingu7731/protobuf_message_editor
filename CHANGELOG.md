@@ -1,3 +1,10 @@
+## 0.0.5
+
+Breaking changes:
+
+- `SubmessageBuilder` typedef has been updated to include `parentMessage` and `onRebuildRequested` parameters.
+- Add copy-to-edit button for frozen submessages
+
 ## 0.0.4
 
 Added support for `google.protobuf.BoolValue` via a default custom editor registry
