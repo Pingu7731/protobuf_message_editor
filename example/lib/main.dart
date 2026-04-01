@@ -15,7 +15,7 @@ final exampleRegistry = AnyEditorRegistry([
 ]);
 
 final exampleCustomEditors = CustomEditorRegistry.fromIterable(
-  customMessageEditors: [AnyEditor(registry: exampleRegistry)],
+  customMessageEditors: [AnyEditorBuilder(registry: exampleRegistry)],
 );
 
 class ProtobufMessageEditorExampleApp extends StatefulWidget {

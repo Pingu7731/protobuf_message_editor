@@ -3,10 +3,13 @@ import 'package:protobuf/protobuf.dart';
 import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
 
-class AnyEditor extends CustomMessageEditorBuilder {
+// For compatiblity
+typedef AnyEditor = AnyEditorBuilder;
+
+class AnyEditorBuilder extends CustomMessageEditorBuilder {
   final AnyEditorRegistry registry;
 
-  AnyEditor({required this.registry});
+  AnyEditorBuilder({required this.registry});
 
   @override
   String get qualifiedMessageName =>
