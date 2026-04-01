@@ -5,8 +5,11 @@ import 'package:protobuf_message_editor/protobuf_message_editor.dart';
 
 class BoolValueEditor extends CustomMessageEditorBuilder {
   @override
-  Widget build(BuildContext context, {required GeneratedMessage data}) =>
-      _BoolValueEditorWidget(data: data as BoolValue);
+  Widget build(
+    BuildContext context, {
+    required GeneratedMessage data,
+    GeneratedMessage? parentMessage,
+  }) => _BoolValueEditorWidget(data: data as BoolValue);
 
   @override
   String get qualifiedMessageName =>
@@ -16,8 +19,8 @@ class BoolValueEditor extends CustomMessageEditorBuilder {
 class _BoolValueEditorWidget extends StatefulWidget {
   final BoolValue data;
 
-  const _BoolValueEditorWidget({Key? key, required this.data})
-    : super(key: key);
+  // ignore: unused_element_parameter
+  const _BoolValueEditorWidget({super.key, required this.data});
 
   @override
   State<_BoolValueEditorWidget> createState() => _BoolValueEditorWidgetState();

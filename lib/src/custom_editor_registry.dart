@@ -5,13 +5,17 @@ import 'package:protobuf_message_editor/src/utils/proto_message_extensions.dart'
 abstract class CustomFieldEditorBuilder {
   FieldIdentifier get identifier;
 
-  Widget build(BuildContext context);
+  Widget build(BuildContext context, {required GeneratedMessage parentMessage});
 }
 
 abstract class CustomMessageEditorBuilder<T extends GeneratedMessage> {
   String get qualifiedMessageName;
 
-  Widget build(BuildContext context, {required T data});
+  Widget build(
+    BuildContext context, {
+    required T data,
+    GeneratedMessage? parentMessage,
+  });
 }
 
 class CustomEditorRegistry {

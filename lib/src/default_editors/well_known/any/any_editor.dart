@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
-import 'any_editor_registry.dart';
 
 class AnyEditor extends CustomMessageEditorBuilder {
   final AnyEditorRegistry registry;
@@ -14,8 +13,11 @@ class AnyEditor extends CustomMessageEditorBuilder {
       Any.getDefault().info_.qualifiedMessageName;
 
   @override
-  Widget build(BuildContext context, {required GeneratedMessage data}) =>
-      _AnyEditorWidget(registry: registry, data: data as Any);
+  Widget build(
+    BuildContext context, {
+    required GeneratedMessage data,
+    GeneratedMessage? parentMessage,
+  }) => _AnyEditorWidget(registry: registry, data: data as Any);
 }
 
 class _AnyEditorWidget extends StatefulWidget {

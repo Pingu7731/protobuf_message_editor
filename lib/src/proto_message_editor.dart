@@ -95,7 +95,11 @@ class _ProtoMessageEditorState extends State<ProtoMessageEditor> {
           widget.message.info_.qualifiedMessageName,
         );
     if (customMessageEditor != null) {
-      return customMessageEditor.build(context, data: widget.message);
+      return customMessageEditor.build(
+        context,
+        data: widget.message,
+        parentMessage: widget.message,
+      );
     }
 
     final fields = widget.message.info_.fieldInfo;
@@ -108,7 +112,7 @@ class _ProtoMessageEditorState extends State<ProtoMessageEditor> {
           customEditorRegistry.getCustomFieldBuilder(fieldIdentifier) ??
           defaultEditorRegistry.getCustomFieldBuilder(fieldIdentifier);
       if (customFieldBuilder != null) {
-        return customFieldBuilder.build(context);
+        return customFieldBuilder.build(context, parentMessage: widget.message);
       }
 
       return Padding(
