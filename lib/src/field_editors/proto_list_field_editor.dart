@@ -22,6 +22,7 @@ class ProtoListFieldEditor extends StatefulWidget {
   })
   repeatedFieldAddBuilder;
   final SubmessageBuilder submessageBuilder;
+  final VoidCallback? onRebuildRequested;
 
   const ProtoListFieldEditor({
     super.key,
@@ -30,6 +31,7 @@ class ProtoListFieldEditor extends StatefulWidget {
     this.itemBuilder,
     this.repeatedFieldAddBuilder = defaultRepeatedFieldAddBuilder,
     this.submessageBuilder = ProtoFieldEditor.defaultSubmessageBuilder,
+    this.onRebuildRequested,
   });
 
   @override
@@ -98,6 +100,12 @@ class _ProtoListFieldEditorState extends State<ProtoListFieldEditor> {
                 fieldInfo: widget.fieldInfo,
                 message: widget.message,
                 listIndex: index,
+                repeatedFieldAddBuilder: widget.repeatedFieldAddBuilder,
+                submessageBuilder: widget.submessageBuilder,
+                onRebuildRequested: () {
+                  setState(() {});
+                  widget.onRebuildRequested?.call();
+                },
               );
             }
 
@@ -105,7 +113,10 @@ class _ProtoListFieldEditorState extends State<ProtoListFieldEditor> {
               fieldInfo: widget.fieldInfo,
               parentMessage: widget.message,
               submessage: item,
-              onRebuildRequested: () => setState(() {}),
+              onRebuildRequested: () {
+                setState(() {});
+                widget.onRebuildRequested?.call();
+              },
             );
           }),
           Padding(
@@ -123,6 +134,7 @@ class _ProtoListFieldEditorState extends State<ProtoListFieldEditor> {
                   setState(() {
                     submessage.add(created);
                   });
+                  widget.onRebuildRequested?.call();
                 }
               },
               icon: const Icon(Icons.add),

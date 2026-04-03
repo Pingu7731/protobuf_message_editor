@@ -1,9 +1,21 @@
+## 0.1.0
+
+- Refactored custom message editors to decouple the editor content widget from field expansion or navigation logic.
+- Provided `CustomEditorProvider` and `SubmessageBuilder` down the widget tree via `Provider` to simplify propagation.
+
+### Breaking changes:
+
+- `CustomEditorRegistry` has been largely abstracted into the `CustomEditorProvider` interface.
+- `customEditorRegistry` properties has been renamed to `customEditorProvider` and accepts the new interface.
+- `submessageBuilder` property now receives a content widget instead of just the submessage itself.
+- `ProtoNavigationState` and its nodes now track `fieldInfo` alongside messages in their stack.
+
 ## 0.0.5
 
 - Add `AnyEditor` for editing `google.protobuf.Any` messages
 - Add `AnyEditorRegistry` for managing available message types for `AnyEditor`
 
-Breaking changes:
+### Breaking changes:
 
 - `SubmessageBuilder` typedef has been updated to include `parentMessage` and `onRebuildRequested` parameters.
 - Add copy-to-edit button for frozen submessages

@@ -182,6 +182,7 @@ class ExampleMessage extends $pb.GeneratedMessage {
     $core.Iterable<ExampleSubmessage>? exampleRepeatedSubmessageField,
     $0.BoolValue? exampleBoolValue,
     $1.Any? exampleAny,
+    $core.Iterable<$1.Any>? exampleRepeatedAny,
   }) {
     final result = create();
     if (exampleStringField != null)
@@ -197,6 +198,8 @@ class ExampleMessage extends $pb.GeneratedMessage {
           .addAll(exampleRepeatedSubmessageField);
     if (exampleBoolValue != null) result.exampleBoolValue = exampleBoolValue;
     if (exampleAny != null) result.exampleAny = exampleAny;
+    if (exampleRepeatedAny != null)
+      result.exampleRepeatedAny.addAll(exampleRepeatedAny);
     return result;
   }
 
@@ -228,6 +231,8 @@ class ExampleMessage extends $pb.GeneratedMessage {
         protoName: 'exampleBoolValue', subBuilder: $0.BoolValue.create)
     ..aOM<$1.Any>(8, _omitFieldNames ? '' : 'exampleAny',
         protoName: 'exampleAny', subBuilder: $1.Any.create)
+    ..pPM<$1.Any>(9, _omitFieldNames ? '' : 'exampleRepeatedAny',
+        subBuilder: $1.Any.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -309,6 +314,9 @@ class ExampleMessage extends $pb.GeneratedMessage {
   void clearExampleAny() => $_clearField(8);
   @$pb.TagNumber(8)
   $1.Any ensureExampleAny() => $_ensure(7);
+
+  @$pb.TagNumber(9)
+  $pb.PbList<$1.Any> get exampleRepeatedAny => $_getList(8);
 }
 
 const $core.bool _omitFieldNames =

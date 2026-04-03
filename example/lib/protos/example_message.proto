@@ -32,4 +32,5 @@ message ExampleMessage {
 
   google.protobuf.BoolValue exampleBoolValue = 7;
   google.protobuf.Any exampleAny = 8;
+  repeated google.protobuf.Any example_repeated_any = 9;
 }

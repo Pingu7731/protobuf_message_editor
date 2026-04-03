@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
+import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor_example/generated/example_message.pb.dart';
 
 void main() {
@@ -36,7 +37,12 @@ class _ProtobufMessageEditorExampleAppState
   void initState() {
     super.initState();
 
-    _rootMessage = ExampleMessage();
+    _rootMessage = ExampleMessage()
+      ..exampleRepeatedAny.addAll([
+        Any.pack(ExampleSubmessage()..someString = 'Nested Any 1'),
+        Any.pack(AnotherExampleSubmessage()..anotherString = 'Nested Any 2'),
+      ]);
+
     _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
   }
 
@@ -93,7 +99,7 @@ class _ProtobufMessageEditorExampleAppState
               padding: EdgeInsets.all(12.0),
               child: ProtoDualPanelMessageEditor.withRootMessage(
                 rootMessage: _rootMessage,
-                customEditorRegistry: exampleCustomEditors,
+                customEditorProvider: exampleCustomEditors,
               ),
             ),
             Padding(
@@ -101,7 +107,7 @@ class _ProtobufMessageEditorExampleAppState
               child: SingleChildScrollView(
                 child: ProtoMessageEditor(
                   message: _rootMessage,
-                  customEditorRegistry: exampleCustomEditors,
+                  customEditorProvider: exampleCustomEditors,
                 ),
               ),
             ),

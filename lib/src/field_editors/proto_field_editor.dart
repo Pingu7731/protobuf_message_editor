@@ -80,6 +80,8 @@ class ProtoFieldEditor extends StatefulWidget {
           padding: const EdgeInsets.only(left: 12),
           child: ProtoMessageEditor(
             message: submessage,
+            parentMessage: parentMessage,
+            fieldInfo: fieldInfo,
             onRebuildRequested: onRebuildRequested,
             submessageBuilder:
                 ({
@@ -150,6 +152,7 @@ class _ProtoFieldEditorState extends State<ProtoFieldEditor> {
         message: widget.message,
         fieldInfo: widget.fieldInfo,
         submessageBuilder: widget.submessageBuilder,
+        onRebuildRequested: widget.onRebuildRequested,
         repeatedFieldAddBuilder:
             repeatedFieldAddBuilder ??
             ProtoListFieldEditor.defaultRepeatedFieldAddBuilder,

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf_message_editor/src/custom_editor_provider.dart';
 import 'package:protobuf_message_editor/src/utils/proto_message_extensions.dart';
 
 abstract class CustomFieldEditorBuilder {
@@ -18,7 +19,7 @@ abstract class CustomMessageEditorBuilder<T extends GeneratedMessage> {
   });
 }
 
-class CustomEditorRegistry {
+class CustomEditorRegistry implements CustomEditorProvider {
   final Map<FieldIdentifier, CustomFieldEditorBuilder> customFieldBuilders;
   final Map<String, CustomMessageEditorBuilder> customMessageEditors;
   final dynamic Function({
@@ -99,5 +100,31 @@ class CustomEditorRegistry {
     String qualifiedMessageName,
   ) {
     return customMessageEditors[qualifiedMessageName];
+  }
+
+  @override
+  WidgetBuilder? getSubmessageEditorBuilder(
+    GeneratedMessage submessage,
+    GeneratedMessage? parentMessage,
+    FieldInfo? fieldInfo,
+  ) {
+    final customEditor = getCustomMessageEditor(
+      submessage.info_.qualifiedMessageName,
+    );
+    if (customEditor == null) return null;
+    return (context) => customEditor.build(
+      context,
+      data: submessage,
+      parentMessage: parentMessage,
+    );
+  }
+
+  @override
+  dynamic Function({
+    required FieldIdentifier identifier,
+    required FieldInfo fieldInfo,
+  })?
+  getRepeatedFieldAddBuilder() {
+    return repeatedFieldAddBuilder;
   }
 }

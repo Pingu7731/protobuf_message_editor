@@ -5,11 +5,13 @@ import 'package:protobuf/protobuf.dart';
 class ProtoNavigationNode {
   final int depth;
   final GeneratedMessage? parent;
+  final FieldInfo? fieldInfo;
   final GeneratedMessage message;
 
   ProtoNavigationNode({
     required this.depth,
     required this.parent,
+    this.fieldInfo,
     required this.message,
   });
 }
@@ -35,19 +37,20 @@ class ProtoNavigationState extends ChangeNotifier {
   ProtoNavigationNode? getParent() =>
       _stack.length > 1 ? _stack[_stack.length - 2] : null;
 
-  void push(GeneratedMessage message) {
+  void push(GeneratedMessage message, {FieldInfo? fieldInfo}) {
     final current = getCurrent();
     _stack.add(
       ProtoNavigationNode(
         depth: current.depth + 1,
         parent: current.message,
+        fieldInfo: fieldInfo,
         message: message,
       ),
     );
     notifyListeners();
   }
 
-  void replace(GeneratedMessage message) {
+  void replace(GeneratedMessage message, {FieldInfo? fieldInfo}) {
     if (_stack.length < 2) throw Exception('Cannot replace root node');
 
     final current = _stack.removeLast();
@@ -55,6 +58,7 @@ class ProtoNavigationState extends ChangeNotifier {
       ProtoNavigationNode(
         depth: current.depth,
         parent: current.parent,
+        fieldInfo: fieldInfo ?? current.fieldInfo,
         message: message,
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf_message_editor/src/custom_editor_provider.dart';
 import 'package:protobuf_message_editor/src/custom_editor_registry.dart';
 import 'package:protobuf_message_editor/src/proto_message_editor.dart';
 import 'package:protobuf_message_editor/src/proto_navigation_breadcrumb.dart';
@@ -14,18 +15,18 @@ import 'package:protobuf_message_editor/src/proto_navigation_state.dart';
 class ProtoDualPanelMessageEditor extends StatefulWidget {
   final ProtoNavigationState? navigationState;
   final GeneratedMessage? rootMessage;
-  final CustomEditorRegistry? customEditorRegistry;
+  final CustomEditorProvider? customEditorProvider;
 
   const ProtoDualPanelMessageEditor({
     super.key,
     required this.navigationState,
-    this.customEditorRegistry,
+    this.customEditorProvider,
   }) : rootMessage = null;
 
   const ProtoDualPanelMessageEditor.withRootMessage({
     super.key,
     required this.rootMessage,
-    this.customEditorRegistry,
+    this.customEditorProvider,
   }) : navigationState = null;
 
   @override
@@ -74,8 +75,8 @@ class _ProtoDualPanelMessageEditorState
 
     return GestureDetector(
       onTap: () => useReplace
-          ? _navigationState.replace(submessage)
-          : _navigationState.push(submessage),
+          ? _navigationState.replace(submessage, fieldInfo: fieldInfo)
+          : _navigationState.push(submessage, fieldInfo: fieldInfo),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -146,8 +147,10 @@ class _ProtoDualPanelMessageEditorState
     return SingleChildScrollView(
       child: ProtoMessageEditor(
         key: ValueKey(identityHashCode(node.message)),
-        customEditorRegistry: widget.customEditorRegistry,
+        customEditorProvider: widget.customEditorProvider,
         message: node.message,
+        parentMessage: node.parent,
+        fieldInfo: node.fieldInfo,
         submessageBuilder:
             ({
               required GeneratedMessage submessage,
@@ -179,8 +182,10 @@ class _ProtoDualPanelMessageEditorState
     return SingleChildScrollView(
       child: ProtoMessageEditor(
         key: ValueKey(identityHashCode(node.message)),
-        customEditorRegistry: widget.customEditorRegistry,
+        customEditorProvider: widget.customEditorProvider,
         message: node.message,
+        parentMessage: node.parent,
+        fieldInfo: node.fieldInfo,
         submessageBuilder:
             ({
               required GeneratedMessage submessage,
