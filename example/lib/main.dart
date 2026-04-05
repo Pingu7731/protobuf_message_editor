@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf/well_known_types/google/protobuf/wrappers.pb.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
 import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_editor.dart';
-import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor_example/generated/example_message.pb.dart';
 
 void main() {

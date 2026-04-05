@@ -173,5 +173,67 @@ void _testAny() {
         'type.googleapis.com/test.TestMessage',
       );
     });
+
+    test('addField with typeUrl initializes @type for Any field', () {
+      final parentInfo = BuilderInfo(
+        'Parent',
+        createEmptyInstance: () => TestMessage(),
+      )..aOM<MockAny>(1, 'anyField', subBuilder: () => MockAny());
+      final json = <String, dynamic>{};
+      final controller = ProtobufJsonEditingController.submessage(
+        initialValue: json,
+        builderInfo: parentInfo,
+      );
+
+      controller.addField(
+        'anyField',
+        typeUrl: 'type.googleapis.com/test.TestMessage',
+      );
+
+      expect(controller.jsonMap['anyField'], {
+        '@type': 'type.googleapis.com/test.TestMessage',
+      });
+      expect(controller.isDirty, isTrue);
+    });
+
+    test('addField without typeUrl for Any field uses empty map', () {
+      final parentInfo = BuilderInfo(
+        'Parent',
+        createEmptyInstance: () => TestMessage(),
+      )..aOM<MockAny>(1, 'anyField', subBuilder: () => MockAny());
+      final json = <String, dynamic>{};
+      final controller = ProtobufJsonEditingController.submessage(
+        initialValue: json,
+        builderInfo: parentInfo,
+      );
+
+      controller.addField('anyField');
+
+      expect(controller.jsonMap['anyField'], <String, dynamic>{});
+      expect(controller.isDirty, isTrue);
+    });
+
+    test('updating repeated Any field with typed elements works', () {
+      final parentInfo = BuilderInfo(
+        'Parent',
+        createEmptyInstance: () => TestMessage(),
+      )..pPM<MockAny>(1, 'repeatedAny', subBuilder: () => MockAny());
+      final json = <String, dynamic>{'repeatedAny': []};
+      final controller = ProtobufJsonEditingController.submessage(
+        initialValue: json,
+        builderInfo: parentInfo,
+      );
+
+      final newList = [
+        {'@type': 'type.googleapis.com/test.TestMessage', 'name': 'item1'},
+      ];
+      controller.updateField('repeatedAny', newList);
+
+      expect(
+        controller.jsonMap['repeatedAny'][0]['@type'],
+        'type.googleapis.com/test.TestMessage',
+      );
+      expect(controller.isDirty, isTrue);
+    });
   });
 }

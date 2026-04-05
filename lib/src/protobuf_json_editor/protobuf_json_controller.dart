@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf_message_editor/src/utils/proto_field_type_extensions.dart';
 
 /// A controller that manages the JSON representation of a [GeneratedMessage].
 ///
@@ -19,13 +20,12 @@ class ProtobufJsonEditingController extends ChangeNotifier {
 
   /// Creates a root controller for a [GeneratedMessage].
   ProtobufJsonEditingController({
-    required GeneratedMessage sourceMessage,
+    required this.sourceMessage,
     this.typeRegistry = const TypeRegistry.empty(),
-  }) : sourceMessage = sourceMessage,
-       builderInfo = sourceMessage.info_,
+  }) : builderInfo = sourceMessage!.info_,
        onChanged = null {
-    _jsonMap = Map.from(
-      sourceMessage.toProto3Json(typeRegistry: typeRegistry)
+    _jsonMap = Map<String, dynamic>.from(
+      sourceMessage!.toProto3Json(typeRegistry: typeRegistry)
           as Map<String, dynamic>,
     );
     _initializeFieldLookup();
@@ -43,7 +43,7 @@ class ProtobufJsonEditingController extends ChangeNotifier {
          initialValue,
          typeRegistry,
        ),
-       _jsonMap = Map.from(initialValue) {
+       _jsonMap = Map<String, dynamic>.from(initialValue) {
     _initializeFieldLookup();
   }
 
@@ -88,6 +88,48 @@ class ProtobufJsonEditingController extends ChangeNotifier {
   void updateField(String key, dynamic value) {
     if (_jsonMap[key] == value) return;
 
+    _onBeforeFieldUpdate(key);
+
+    _jsonMap[key] = value;
+    _isDirty = true;
+    onChanged?.call(_jsonMap);
+    notifyListeners();
+  }
+
+  /// Adds a previously unset field with a default value.
+  ///
+  /// For `google.protobuf.Any` fields, an optional [typeUrl] can be provided
+  /// to automatically set the `@type` field.
+  void addField(String key, {String? typeUrl}) {
+    if (_jsonMap.containsKey(key)) return;
+
+    final fieldInfo = _jsonKeyToFieldInfo[key];
+    if (fieldInfo == null) return;
+
+    _onBeforeFieldUpdate(key);
+
+    if (fieldInfo.isAnyField && typeUrl != null) {
+      _jsonMap[key] = <String, dynamic>{'@type': typeUrl};
+    } else {
+      _jsonMap[key] = fieldInfo.getDefaultValue();
+    }
+
+    _isDirty = true;
+    onChanged?.call(_jsonMap);
+    notifyListeners();
+  }
+
+  /// Removes a field from the JSON map.
+  void removeField(String key) {
+    if (!_jsonMap.containsKey(key)) return;
+
+    _jsonMap.remove(key);
+    _isDirty = true;
+    onChanged?.call(_jsonMap);
+    notifyListeners();
+  }
+
+  void _onBeforeFieldUpdate(String key) {
     final fieldInfo = _jsonKeyToFieldInfo[key];
     final oneofIndex = fieldInfo != null
         ? builderInfo.oneofs[fieldInfo.tagNumber]
@@ -102,11 +144,6 @@ class ProtobufJsonEditingController extends ChangeNotifier {
         _jsonMap.remove(other.name);
       }
     }
-
-    _jsonMap[key] = value;
-    _isDirty = true;
-    onChanged?.call(_jsonMap);
-    notifyListeners();
   }
 
   /// Replaces the entire JSON map. Useful for bulk updates or resets.

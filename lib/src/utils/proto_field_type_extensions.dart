@@ -75,6 +75,11 @@ extension ProtoFieldTypeExtensions on FieldInfo {
   /// Returns `true` if this is an enum field.
   bool get isEnumField => type == PbFieldType.OE || type == PbFieldType.PE;
 
+  /// Returns `true` if this is a `google.protobuf.Any` field.
+  bool get isAnyField =>
+      isMessageField &&
+      subBuilder?.call().info_.qualifiedMessageName == 'google.protobuf.Any';
+
   /// Returns `true` if this is a Well-Known Type that serializes to a scalar in JSON.
   bool get isScalarMessage {
     if (!isMessageField) return false;
@@ -175,5 +180,17 @@ extension ProtoFieldTypeExtensions on FieldInfo {
     return subBuilder?.call() ??
         defaultEnumValue ??
         copyWithoutRepeatedBit().makeDefault?.call();
+  }
+
+  /// Returns a sensible default value for this field (or its elements if repeated) for Proto3 JSON representation.
+  dynamic getDefaultValue({bool forElement = false}) {
+    if (isRepeated && !forElement) return <dynamic>[];
+    if (isMapField && !forElement) return <String, dynamic>{};
+    if (isMessageField && !isScalarMessage) return <String, dynamic>{};
+    if (isBoolField) return false;
+    if (isEnumField) return enumValues!.first.name;
+    if (isNumericField()) return 0;
+    if (isStringField()) return "";
+    return null;
   }
 }

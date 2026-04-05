@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_add_field_button.dart';
 import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_controller.dart';
 import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_field_editor.dart';
 
@@ -101,6 +102,10 @@ class _ProtobufJsonEditorState extends State<ProtobufJsonEditor> {
                         jsonKey: key,
                         depth: 0,
                       ),
+                    ),
+                    ProtobufJsonAddFieldButton(
+                      controller: _controller,
+                      depth: 0,
                     ),
                   ],
                 ),

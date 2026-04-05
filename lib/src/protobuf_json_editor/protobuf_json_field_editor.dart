@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf_message_editor/src/default_editors/well_known/any/any_editor_registry.dart';
+import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_add_field_button.dart';
 import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_controller.dart';
 import 'package:protobuf_message_editor/src/protobuf_json_editor/yaml_layout_components.dart';
 import 'package:protobuf_message_editor/src/utils/proto_field_type_extensions.dart';
@@ -30,15 +32,19 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
       // Special case: Render all fields of the controller's map (naked message)
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: widget.controller.jsonMap.keys
-            .map(
-              (key) => ProtobufJsonFieldEditor(
-                controller: widget.controller,
-                jsonKey: key,
-                depth: widget.depth,
-              ),
-            )
-            .toList(),
+        children: [
+          ...widget.controller.jsonMap.keys.map(
+            (key) => ProtobufJsonFieldEditor(
+              controller: widget.controller,
+              jsonKey: key,
+              depth: widget.depth,
+            ),
+          ),
+          ProtobufJsonAddFieldButton(
+            controller: widget.controller,
+            depth: widget.depth,
+          ),
+        ],
       );
     }
 
@@ -52,6 +58,9 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
         child: YamlFieldRow(
           label: widget.jsonKey,
           value: Text(value?.toString() ?? 'null'),
+          trailing: widget.jsonKey == '@type'
+              ? null
+              : _buildRemoveButton(widget.jsonKey),
         ),
       );
     }
@@ -109,11 +118,12 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
               value: value,
               onChanged: (newValue) =>
                   widget.controller.updateField(widget.jsonKey, newValue),
-              activeColor: Theme.of(context).primaryColor,
+              activeThumbColor: Theme.of(context).primaryColor,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
         ),
+        trailing: _buildRemoveButton(widget.jsonKey),
       ),
     );
   }
@@ -155,6 +165,7 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
             ),
           ),
         ),
+        trailing: _buildRemoveButton(widget.jsonKey),
       ),
     );
   }
@@ -189,6 +200,7 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
             },
           ),
         ),
+        trailing: _buildRemoveButton(widget.jsonKey),
       ),
     );
   }
@@ -211,22 +223,40 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
               onToggle: () => setState(() => _isCollapsed = !_isCollapsed),
             ),
             onTapLabel: () => setState(() => _isCollapsed = !_isCollapsed),
+            trailing: _buildRemoveButton(widget.jsonKey),
           ),
         ),
-        if (!_isCollapsed)
-          ...value.keys.map(
-            (key) => ProtobufJsonFieldEditor(
-              controller: ProtobufJsonEditingController.submessage(
-                initialValue: value,
-                builderInfo: fieldInfo.subBuilder!().info_,
-                typeRegistry: widget.controller.typeRegistry,
-                onChanged: (newMap) =>
-                    widget.controller.updateField(widget.jsonKey, newMap),
-              ),
-              jsonKey: key,
-              depth: widget.depth + 1,
+        if (!_isCollapsed) ...[
+          ...value.keys.map((key) {
+            final subController = ProtobufJsonEditingController.submessage(
+              initialValue: value,
+              builderInfo: fieldInfo.subBuilder!().info_,
+              typeRegistry: widget.controller.typeRegistry,
+              onChanged: (newMap) =>
+                  widget.controller.updateField(widget.jsonKey, newMap),
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ProtobufJsonFieldEditor(
+                  controller: subController,
+                  jsonKey: key,
+                  depth: widget.depth + 1,
+                ),
+              ],
+            );
+          }),
+          ProtobufJsonAddFieldButton(
+            controller: ProtobufJsonEditingController.submessage(
+              initialValue: value,
+              builderInfo: fieldInfo.subBuilder!().info_,
+              typeRegistry: widget.controller.typeRegistry,
+              onChanged: (newMap) =>
+                  widget.controller.updateField(widget.jsonKey, newMap),
             ),
+            depth: widget.depth + 1,
           ),
+        ],
       ],
     );
   }
@@ -249,6 +279,7 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
               onToggle: () => setState(() => _isCollapsed = !_isCollapsed),
             ),
             onTapLabel: () => setState(() => _isCollapsed = !_isCollapsed),
+            trailing: _buildRemoveButton(widget.jsonKey),
           ),
         ),
         if (!_isCollapsed)
@@ -311,7 +342,95 @@ class _ProtobufJsonFieldEditorState extends State<ProtobufJsonFieldEditor> {
               ),
             );
           }),
+        if (!_isCollapsed)
+          YamlIndent(
+            depth: widget.depth + 1,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: InkWell(
+                onTap: () async {
+                  final newList = List.from(value);
+                  dynamic defaultValue = fieldInfo.getDefaultValue(
+                    forElement: true,
+                  );
+
+                  if (fieldInfo.isAnyField) {
+                    final registry = widget.controller.typeRegistry;
+                    if (registry is AnyEditorRegistry) {
+                      final typeNames = registry.availableMessageNames.toList();
+                      final selectedType = await showMenu<String>(
+                        context: context,
+                        position: _getMenuPosition(context),
+                        items: typeNames.map((name) {
+                          return PopupMenuItem(
+                            value: name,
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                      if (selectedType == null) return;
+
+                      defaultValue = <String, dynamic>{
+                        '@type': 'type.googleapis.com/$selectedType',
+                      };
+                    }
+                  }
+
+                  newList.add(defaultValue);
+                  widget.controller.updateField(widget.jsonKey, newList);
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add,
+                      size: 14,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Add element',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _buildRemoveButton(String key) {
+    return InkWell(
+      onTap: () => widget.controller.removeField(key),
+      child: const Icon(Icons.close, size: 14, color: Colors.grey),
+    );
+  }
+
+  RelativeRect _getMenuPosition(BuildContext context) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    return RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
     );
   }
 }

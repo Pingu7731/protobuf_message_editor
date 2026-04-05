@@ -29,6 +29,7 @@ class YamlFieldRow extends StatelessWidget {
   final String label;
   final Widget? value;
   final Widget? leading;
+  final Widget? trailing;
   final VoidCallback? onTapLabel;
 
   const YamlFieldRow({
@@ -36,6 +37,7 @@ class YamlFieldRow extends StatelessWidget {
     required this.label,
     this.value,
     this.leading,
+    this.trailing,
     this.onTapLabel,
   });
 
@@ -60,6 +62,7 @@ class YamlFieldRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           if (value != null) Expanded(child: value!),
+          if (trailing != null) ...[const SizedBox(width: 4), trailing!],
         ],
       ),
     );
