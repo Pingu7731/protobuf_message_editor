@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:protobuf/protobuf.dart';
+import 'package:protobuf/well_known_types/google/protobuf/wrappers.pb.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
+import 'package:protobuf_message_editor/src/protobuf_json_editor/protobuf_json_editor.dart';
 import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor_example/generated/example_message.pb.dart';
 
@@ -30,20 +32,26 @@ class ProtobufMessageEditorExampleApp extends StatefulWidget {
 class _ProtobufMessageEditorExampleAppState
     extends State<ProtobufMessageEditorExampleApp>
     with TickerProviderStateMixin {
-  late final GeneratedMessage _rootMessage;
+  late GeneratedMessage _rootMessage;
   late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
 
-    _rootMessage = ExampleMessage()
-      ..exampleRepeatedAny.addAll([
-        Any.pack(ExampleSubmessage()..someString = 'Nested Any 1'),
-        Any.pack(AnotherExampleSubmessage()..anotherString = 'Nested Any 2'),
-      ]);
+    _rootMessage =
+        ExampleMessage(
+            exampleBoolValue: BoolValue(value: true),
+            exampleStringField: "testasdf",
+          )
+          ..exampleRepeatedAny.addAll([
+            Any.pack(ExampleSubmessage()..someString = 'Nested Any 1'),
+            Any.pack(
+              AnotherExampleSubmessage()..anotherString = 'Nested Any 2',
+            ),
+          ]);
 
-    _tabController = TabController(length: 2, initialIndex: 0, vsync: this);
+    _tabController = TabController(length: 3, initialIndex: 0, vsync: this);
   }
 
   void _showMessageJson(BuildContext context) {
@@ -88,6 +96,7 @@ class _ProtobufMessageEditorExampleAppState
             tabs: [
               Tab(text: 'Dual Panel Editor'),
               Tab(text: 'Plain Editor'),
+              Tab(text: 'JSON Editor (New)'),
             ],
             controller: _tabController,
           ),
@@ -109,6 +118,18 @@ class _ProtobufMessageEditorExampleAppState
                   message: _rootMessage,
                   customEditorProvider: exampleCustomEditors,
                 ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(12.0),
+              child: ProtobufJsonEditor(
+                message: _rootMessage,
+                typeRegistry: exampleRegistry,
+                onSave: (msg) {
+                  setState(() {
+                    _rootMessage = msg;
+                  });
+                },
               ),
             ),
           ],

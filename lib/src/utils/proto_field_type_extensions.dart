@@ -48,7 +48,107 @@ extension ProtoFieldTypeExtensions on FieldInfo {
   /// - Repeated numeric fields (e.g., `repeated int32`)
   /// - Map fields with numeric keys or values
   bool containsNumber() {
-    return (type & numericBits) != 0;
+    return (type & numericBits) != 0 || _isNumericWkt;
+  }
+
+  bool get _isNumericWkt {
+    if (!isMessageField) return false;
+    final name = subBuilder?.call().info_.qualifiedMessageName;
+    return name == 'google.protobuf.DoubleValue' ||
+        name == 'google.protobuf.FloatValue' ||
+        name == 'google.protobuf.Int32Value' ||
+        name == 'google.protobuf.UInt32Value' ||
+        name == 'google.protobuf.Int64Value' ||
+        name == 'google.protobuf.UInt64Value';
+  }
+
+  /// Returns `true` if this is a message or group field.
+  bool get isMessageField => isGroupOrMessage;
+
+  /// Returns `true` if this is a boolean field.
+  bool get isBoolField =>
+      type == PbFieldType.OB ||
+      (isMessageField &&
+          subBuilder?.call().info_.qualifiedMessageName ==
+              'google.protobuf.BoolValue');
+
+  /// Returns `true` if this is an enum field.
+  bool get isEnumField => type == PbFieldType.OE || type == PbFieldType.PE;
+
+  /// Returns `true` if this is a Well-Known Type that serializes to a scalar in JSON.
+  bool get isScalarMessage {
+    if (!isMessageField) return false;
+    final name = subBuilder?.call().info_.qualifiedMessageName;
+    return name != null && _wktScalars.contains(name);
+  }
+
+  /// Returns `true` if this is a `google.protobuf.*Value` wrapper type.
+  bool get isWrapperType {
+    if (!isMessageField) return false;
+    final name = subBuilder?.call().info_.qualifiedMessageName;
+    return name != null && _wrapperTypes.contains(name);
+  }
+
+  static const _wktScalars = {
+    'google.protobuf.BoolValue',
+    'google.protobuf.StringValue',
+    'google.protobuf.BytesValue',
+    'google.protobuf.DoubleValue',
+    'google.protobuf.FloatValue',
+    'google.protobuf.Int32Value',
+    'google.protobuf.UInt32Value',
+    'google.protobuf.Int64Value',
+    'google.protobuf.UInt64Value',
+    'google.protobuf.Timestamp',
+    'google.protobuf.Duration',
+    'google.protobuf.FieldMask',
+  };
+
+  static const _wrapperTypes = {
+    'google.protobuf.BoolValue',
+    'google.protobuf.StringValue',
+    'google.protobuf.BytesValue',
+    'google.protobuf.DoubleValue',
+    'google.protobuf.FloatValue',
+    'google.protobuf.Int32Value',
+    'google.protobuf.UInt32Value',
+    'google.protobuf.Int64Value',
+    'google.protobuf.UInt64Value',
+  };
+
+  /// Returns the enum name for a given value (int or string).
+  String getEnumName(dynamic value) {
+    if (!isEnumField) return value?.toString() ?? 'null';
+    final values = enumValues!;
+    return value is String
+        ? value
+        : values
+              .firstWhere((e) => e.value == value, orElse: () => values.first)
+              .name;
+  }
+
+  /// Casts a string value to the appropriate type for this field.
+  dynamic castString(String value) {
+    if ((type & (PbFieldType.DOUBLE_BIT | PbFieldType.FLOAT_BIT)) != 0 ||
+        _isFloatWkt) {
+      return double.tryParse(value) ?? value;
+    }
+    if (containsNumber()) {
+      // Note: Int64/UInt64 are strings in JSON, but we can treat them
+      // as numbers in the UI if possible, or just return as is if parse fails.
+      return int.tryParse(value) ?? value;
+    }
+    if (isBoolField) {
+      return value.toLowerCase() == 'true';
+    }
+    return value;
+  }
+
+  bool get _isFloatWkt {
+    if (!isMessageField) return false;
+    final name = subBuilder?.call().info_.qualifiedMessageName;
+    return name == 'google.protobuf.DoubleValue' ||
+        name == 'google.protobuf.FloatValue';
   }
 
   copyWithoutRepeatedBit() {

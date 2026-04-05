@@ -159,9 +159,10 @@ class _ProtoFieldEditorState extends State<ProtoFieldEditor> {
       );
     } else if (widget.fieldInfo.isGroupOrMessage) {
       // TODO: submessage could be map entry here, we need to handle it
-      var submessage =
-          widget.message.getField(widget.fieldInfo.tagNumber)
-              as GeneratedMessage;
+      var field = widget.message.getField(widget.fieldInfo.tagNumber);
+      var submessage = widget.fieldInfo.isRepeated && widget.listIndex != null
+          ? (field as List)[widget.listIndex!] as GeneratedMessage
+          : field as GeneratedMessage;
 
       return widget.submessageBuilder(
         submessage: submessage,

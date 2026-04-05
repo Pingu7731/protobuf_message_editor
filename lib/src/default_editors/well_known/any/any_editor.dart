@@ -3,7 +3,7 @@ import 'package:protobuf/protobuf.dart';
 import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:protobuf_message_editor/protobuf_message_editor.dart';
 
-// For compatiblity
+// For compatibility
 typedef AnyEditor = AnyEditorBuilder;
 
 class AnyEditorBuilder extends CustomMessageEditorBuilder {
@@ -26,11 +26,13 @@ class AnyEditorBuilder extends CustomMessageEditorBuilder {
 class AnyEditorWidget extends StatefulWidget {
   final AnyEditorRegistry registry;
   final Any data;
+  final AnyEditingController? controller;
 
   const AnyEditorWidget({
     super.key,
     required this.registry,
     required this.data,
+    this.controller,
   });
 
   @override
@@ -38,98 +40,89 @@ class AnyEditorWidget extends StatefulWidget {
 }
 
 class _AnyEditorWidgetState extends State<AnyEditorWidget> {
-  GeneratedMessage? _unpackedMessage;
-  String? _selectedType;
-  bool _hasUnsavedChanges = false;
+  late AnyEditingController _controller;
 
   @override
   void initState() {
     super.initState();
-    _unpack();
+    _controller =
+        widget.controller ??
+        AnyEditingController(data: widget.data, registry: widget.registry);
   }
 
-  void _unpack() {
-    if (widget.data.typeUrl.isNotEmpty) {
-      final typeName = widget.data.typeUrl.split('/').last;
-      final message = widget.registry.lookupMessage(typeName);
-      if (message != null) {
-        _unpackedMessage = message.deepCopy();
-        _unpackedMessage!.mergeFromBuffer(widget.data.value);
-        _selectedType = typeName;
+  @override
+  void didUpdateWidget(covariant AnyEditorWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      if (oldWidget.controller == null) {
+        _controller.dispose();
       }
+      _controller =
+          widget.controller ??
+          AnyEditingController(data: widget.data, registry: widget.registry);
     }
   }
 
-  void _onTypeChanged(String? newType) {
-    if (newType == null || newType == _selectedType) return;
-
-    setState(() {
-      _selectedType = newType;
-      final message = widget.registry.lookupMessage(newType)!;
-      _unpackedMessage = message.deepCopy();
-      _hasUnsavedChanges = true;
-    });
-  }
-
-  void _save() {
-    if (_unpackedMessage == null) return;
-
-    setState(() {
-      widget.data.typeUrl = 'type.googleapis.com/$_selectedType';
-      widget.data.value = _unpackedMessage!.writeToBuffer();
-      _hasUnsavedChanges = false;
-    });
+  @override
+  void dispose() {
+    if (widget.controller == null) {
+      _controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final unpackedMessage = _controller.unpackedMessage;
+        final selectedType = _controller.selectedType;
+        final hasUnsavedChanges = _controller.hasUnsavedChanges;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: DropdownButton<String>(
-                value: _selectedType,
-                hint: const Text('Select Message Type'),
-                isExpanded: true,
-                items: widget.registry.availableMessageNames.map((name) {
-                  return DropdownMenuItem(value: name, child: Text(name));
-                }).toList(),
-                onChanged: _onTypeChanged,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: selectedType,
+                    hint: const Text('Select Message Type'),
+                    isExpanded: true,
+                    items: widget.registry.availableMessageNames.map((name) {
+                      return DropdownMenuItem(value: name, child: Text(name));
+                    }).toList(),
+                    onChanged: _controller.onTypeChanged,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: unpackedMessage != null ? _controller.save : null,
+                  icon: Icon(
+                    hasUnsavedChanges ? Icons.save_as : Icons.save,
+                    color: hasUnsavedChanges ? Colors.orange : null,
+                  ),
+                  label: Text(
+                    'Save',
+                    style: TextStyle(
+                      color: hasUnsavedChanges ? Colors.orange : null,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: _unpackedMessage != null ? _save : null,
-              icon: Icon(
-                _hasUnsavedChanges ? Icons.save_as : Icons.save,
-                color: _hasUnsavedChanges ? Colors.orange : null,
-              ),
-              label: Text(
-                'Save',
-                style: TextStyle(
-                  color: _hasUnsavedChanges ? Colors.orange : null,
+            if (unpackedMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: ProtoMessageEditor(
+                  message: unpackedMessage,
+                  onRebuildRequested: _controller.markDirty,
                 ),
               ),
-            ),
           ],
-        ),
-        if (_unpackedMessage != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 16.0),
-            child: ProtoMessageEditor(
-              message: _unpackedMessage!,
-              onRebuildRequested: () {
-                if (!_hasUnsavedChanges) {
-                  setState(() {
-                    _hasUnsavedChanges = true;
-                  });
-                }
-              },
-            ),
-          ),
-      ],
+        );
+      },
     );
   }
 }
